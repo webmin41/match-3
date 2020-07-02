@@ -1,6 +1,7 @@
 dd = console.log;
 
 class Game {
+
     items = [];
     width = 0;
     height = 0;
@@ -14,17 +15,29 @@ class Game {
         this.height = height;
         this.x_size = x_size;
         this.y_size = y_size;
+        this.x_block = width / x_size;
+        this.y_block = height / y_size;
 
         this.drawBoard(width, height, x_size, y_size);
         this.fillItem(x_size, y_size);
         this.showItem();
+
+        this.bindEvent();
+    }
+
+    bindEvent() {
+        const {x_block, y_block} = this;
+
+        this.canvas.addEventListener('mousedown', e => {
+            const [pos_x,pos_y] = [Math.floor(e.offsetX / x_block), Math.floor(e.offsetY / y_block)];
+            const target = this.items.find(x => x.coordinate.x === pos_x && x.coordinate.y === pos_y);
+
+            dd(target);
+        }, false);
     }
 
     drawBoard(width, height, x_size, y_size) {
         const ctx = this.canvas.getContext('2d');
-
-        this.x_block = width / x_size;
-        this.y_block = height / y_size;
         
         ctx.globalAlpha = .5;
 
@@ -104,14 +117,6 @@ class GameItem {
         this.coordinate = {x,y};
     }
 
-    get canvasXPos() {
-        return 1;
-    }
-
-    get canvasYPos() {
-        return 2;
-    }
-
     changeType() {
         const valid = this.types.filter(x => x.type !== this.type);
         Object.assign(this, valid[Math.floor(Math.random() * valid.length)]);
@@ -128,5 +133,4 @@ window.onload = function() {
     const canvas = document.getElementById('game');
 
     const game = new Game(canvas, width, height, x_size, y_size);
-    console.log(game);
 }
