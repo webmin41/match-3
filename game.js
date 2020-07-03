@@ -8,6 +8,7 @@ class Game {
     x_size = 0;
     y_size = 0;
     canvas = null;
+    active = null;
 
     constructor(canvas, width, height, x_size, y_size) {
         this.canvas = canvas;
@@ -29,10 +30,15 @@ class Game {
         const {x_block, y_block} = this;
 
         this.canvas.addEventListener('mousedown', e => {
-            const [pos_x,pos_y] = [Math.floor(e.offsetX / x_block), Math.floor(e.offsetY / y_block)];
-            const target = this.items.find(x => x.coordinate.x === pos_x && x.coordinate.y === pos_y);
+            const {offsetX: x, offsetY: y} = e;
+            const target = this.items.find(elem => elem.coordinate.x === Math.floor(x / this.x_block) && elem.coordinate.y === Math.floor(y / this.y_block));
 
-            dd(target);
+            if(this.active !== null){
+                this.swapItems(this.active, target);
+            }
+
+            this.active = this.active === null ? target : null;
+            this.showItem();
         }, false);
     }
 
@@ -71,14 +77,19 @@ class Game {
             ctx.fillStyle = "#fff";
             ctx.fillText(x.type, x_block * x.coordinate.x + x_block / 2 - width / 2, y_block * x.coordinate.y + y_block / 2 + 12);
         });
+
+        if(this.active !== null){
+            ctx.globalAlpha = 1;
+            ctx.strokeStyle = "#d62527";
+            ctx.strokeRect(this.active.coordinate.x * this.x_block, this.active.coordinate.y * this.y_block, this.x_block, this.y_block);
+            ctx.strokeStyle = "#fff";
+        }
     }
 
     removeExploding() {
         const {y_size} = this;
 
         this.items.forEach((x,idx) => {
-            const type = x.type;
-
             const [before_x, before_x_2, before_y, before_y_2] = [
                 this.items[idx - 1],
                 this.items[idx - 2],
@@ -86,17 +97,27 @@ class Game {
                 this.items[idx - y_size * 2]
             ];
 
-            if(!(before_x && before_x_2) || !(before_y && before_y_2)){
-                return true;
+            if((before_x && before_x_2) && (before_x.type === x.type && before_x_2.type === x.type)){
+                x.changeType();
             }
 
-            if(
-                (before_x.type === type && before_x_2.type === type) || 
-                (before_y.type === type && before_y_2.type === type)
-            ){
+            if((before_y && before_y_2) && (before_y.type === x.type && before_y_2.type === x.type)){
                 x.changeType();
             }
         })
+    }
+
+    swapItems(target, element) {
+        if(
+            (target.coordinate.y !== target.element.y && (target.coordinate.x - 1 === element.coordinate.x || target.coordinate.x + 1 === element.coordinate.x)) ||
+            (target.coordinate.x !== target.element.x && (target.coordinate.y - 1 === element.coordinate.y || target.coordinate.y + 1 === element.coordinate.y))
+        ) return false;
+
+        const tmp = JSON.parse(JSON.stringify(element.coordinate));
+        element.coordinate = target.coordinate;
+        target.coordinate = tmp;
+
+        dd(this.items);
     }
 }
 
@@ -105,12 +126,12 @@ class GameItem {
 
     constructor(x,y) {
         this.types = [
-            {type: '1', background: '#111'},
-            {type: '2', background: '#222'},
-            {type: '3', background: '#333'},
-            {type: '4', background: '#444'},
-            {type: '5', background: '#555'},
-            {type: '6', background: '#666'},
+            {type: 1, background: '#111'},
+            {type: 2, background: '#222'},
+            {type: 3, background: '#333'},
+            {type: 4, background: '#444'},
+            {type: 5, background: '#555'},
+            {type: 6, background: '#666'},
         ];
 
         Object.assign(this, this.types[Math.floor(Math.random() * this.types.length)]);
