@@ -113,9 +113,7 @@ class Game {
             (target.coordinate.x !== target.element.x && (target.coordinate.y - 1 === element.coordinate.y || target.coordinate.y + 1 === element.coordinate.y))
         ) return false;
 
-        const tmp = JSON.parse(JSON.stringify(element.coordinate));
-        element.coordinate = target.coordinate;
-        target.coordinate = tmp;
+        [element.coordinate, target.coordinate] = [{...target.coordinate}, {...element.coordinate}];
 
         dd(this.items);
     }
