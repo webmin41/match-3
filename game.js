@@ -64,7 +64,23 @@ class Game {
       })
     })
 
-    this.removeExploding()
+    this.items.forEach((x, idx) => {
+      const { type } = x
+      const [xBefore, xBefore2, yBefore, yBefore2] = [
+        this.items[idx - 1],
+        this.items[idx - 2],
+        this.items[idx - ySize],
+        this.items[idx - ySize * 2]
+      ]
+
+      if ((xBefore && xBefore2) && (xBefore.type === type && xBefore2.type === type)) {
+        x.changeType()
+      }
+
+      if ((yBefore && yBefore2) && (yBefore.type === type && yBefore2.type === type)) {
+        x.changeType()
+      }
+    })
   }
 
   showItem () {
@@ -94,28 +110,6 @@ class Game {
       ctx.strokeRect(activeX * xBlock, activeY * yBlock, xBlock, yBlock)
       ctx.strokeStyle = '#fff'
     }
-  }
-
-  removeExploding () {
-    const { ySize } = this
-
-    this.items.forEach((x, idx) => {
-      const { type } = x
-      const [xBefore, xBefore2, yBefore, yBefore2] = [
-        this.items[idx - 1],
-        this.items[idx - 2],
-        this.items[idx - ySize],
-        this.items[idx - ySize * 2]
-      ]
-
-      if ((xBefore && xBefore2) && (xBefore.type === type && xBefore2.type === type)) {
-        x.changeType()
-      }
-
-      if ((yBefore && yBefore2) && (yBefore.type === type && yBefore2.type === type)) {
-        x.changeType()
-      }
-    })
   }
 
   swapItems (target, element) {
