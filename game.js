@@ -31,7 +31,7 @@ class Game {
     const { xBlock, yBlock } = this
     const { offsetX, offsetY } = e
     const target = this.items.find(elem => {
-      const { x: elemX, y: elemY } = elem.coordinate
+      const { x: elemX, y: elemY } = elem.position
       return elemX === Math.floor(offsetX / xBlock) && elemY === Math.floor(offsetY / yBlock)
     })
 
@@ -49,8 +49,8 @@ class Game {
 
     ctx.globalAlpha = 0.5
 
-    tmpX.map((x, idx) => idx * this.x_block).forEach((x, idx) => ctx.fillRect(x, 0, 1, height))
-    tmpY.map((x, idx) => idx * this.y_block).forEach((x, idx) => ctx.fillRect(0, x, width, 1))
+    tmpX.map((x, idx) => idx * this.x_block).forEach(x => ctx.fillRect(x, 0, 1, height))
+    tmpY.map((x, idx) => idx * this.y_block).forEach(x => ctx.fillRect(0, x, width, 1))
 
     ctx.strokeRect(0, 0, width - 1, height - 1)
   }
@@ -93,7 +93,7 @@ class Game {
 
     this.items.forEach((x) => {
       const { width } = ctx.measureText(x.type)
-      const { background, coordinate: { x: elemX, y: elemY } } = x
+      const { background, position: { x: elemX, y: elemY } } = x
 
       ctx.fillStyle = background
       ctx.fillRect(xBlock * elemX, yBlock * elemY, xBlock, yBlock)
@@ -103,7 +103,7 @@ class Game {
     })
 
     if (this.active !== null) {
-      const { x: activeX, y: activeY } = active.coordinate
+      const { x: activeX, y: activeY } = active.position
 
       ctx.globalAlpha = 1
       ctx.strokeStyle = '#d62527'
@@ -113,19 +113,17 @@ class Game {
   }
 
   swapItems (target, element) {
-    const { x: targetX, y: targetY } = target.coordinate
-    const { x: elemX, y: elemY } = element.coordinate
+    const { x: targetX, y: targetY } = target.position
+    const { x: elemX, y: elemY } = element.position
     const isValid = (
       (targetY === elemY && (targetX - 1 === elemX || targetX + 1 === elemX)) ||
       (targetX === elemX && (targetY - 1 === elemY || targetY + 1 === elemY))
     )
 
     if (isValid) {
-      [element.coordinate, target.coordinate] = [{
-        ...target.coordinate
-      }, {
-        ...element.coordinate
-      }]
+      const tmp = { ...element.position }
+      element.position = target.position
+      target.position = tmp
     }
 
     return isValid
