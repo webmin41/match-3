@@ -15,6 +15,7 @@ class Game {
     this.ySize = ySize
     this.xBlock = width / xSize
     this.yBlock = height / ySize
+    this.items = Array(ySize).fill([]).map(x => [...x])
 
     this.drawBoard(width, height, xSize, ySize)
     this.fillItem(xSize, ySize)
@@ -58,28 +59,60 @@ class Game {
   fillItem (xSize, ySize) {
     const [tmpX, tmpY] = [Array(xSize).fill(null), Array(ySize).fill(null)]
 
-    tmpX.forEach((y, xIdx) => {
-      tmpY.forEach((x, yIdx) => {
-        this.items.push(new GameItem(xIdx, yIdx))
+    const types = [
+      {
+        type: 1,
+        background: '#111'
+      },
+      {
+        type: 2,
+        background: '#222'
+      },
+      {
+        type: 3,
+        background: '#333'
+      },
+      {
+        type: 4,
+        background: '#444'
+      },
+      {
+        type: 5,
+        background: '#555'
+      },
+      {
+        type: 6,
+        background: '#666'
+      }
+    ]
+
+    tmpY.forEach((y, yIdx) => {
+      tmpX.forEach((x, xIdx) => {
+        const item = types[Math.floor(Math.random() * (types.length - 1))]
+        this.items[xIdx][yIdx] = new GameItem(item)
+        this.showItem()
       })
     })
 
-    this.items.forEach((x, idx) => {
-      const { type } = x
-      const [xBefore, xBefore2, yBefore, yBefore2] = [
-        this.items[idx - 1],
-        this.items[idx - 2],
-        this.items[idx - ySize],
-        this.items[idx - ySize * 2]
-      ]
+    this.items.forEach((y, yPos, orgY) => {
+      y.forEach((x, xPos, orgX) => {
+        const { type: now } = x
 
-      if ((xBefore && xBefore2) && (xBefore.type === type && xBefore2.type === type)) {
-        x.changeType()
-      }
+        const [xBefore, xBefore2, yBefore, yBefore2] = [
+          orgX[xPos - 1],
+          orgX[xPos - 2],
+          orgY[yPos - 1] ? orgY[yPos - 1][xPos] : null,
+          orgY[yPos - 2] ? orgY[yPos - 2][xPos] : null
+        ]
 
-      if ((yBefore && yBefore2) && (yBefore.type === type && yBefore2.type === type)) {
-        x.changeType()
-      }
+        if (
+          (xBefore && xBefore2) && (xBefore.type === now && xBefore2.type === now)
+        ) this.items[yPos][xPos] = types.filter(x => x.type !== now)[Math.floor(Math.random() * 5)]
+
+        if (
+          (yBefore && yBefore2) && (yBefore.type === now && yBefore2.type === now)
+        ) this.items[yPos][xPos] = types.filter(x => x.type !== now)[Math.floor(Math.random() * 5)]
+      })
     })
   }
 
@@ -91,25 +124,27 @@ class Game {
     ctx.font = '16pt Malgun Gothic'
     ctx.strokeStyle = '#fff'
 
-    this.items.forEach((x) => {
-      const { width } = ctx.measureText(x.type)
-      const { background, position: { x: elemX, y: elemY } } = x
+    this.items.forEach((y, elemY) => {
+      y.forEach((x, elemX) => {
+        const { type, background } = x
+        const { width } = ctx.measureText(type)
 
-      ctx.fillStyle = background
-      ctx.fillRect(xBlock * elemX, yBlock * elemY, xBlock, yBlock)
-      ctx.strokeRect(xBlock * elemX, yBlock * elemY, xBlock, yBlock)
-      ctx.fillStyle = '#fff'
-      ctx.fillText(x.type, xBlock * elemX + xBlock / 2 - width / 2, yBlock * elemY + yBlock / 2 + 12)
+        ctx.fillStyle = background
+        ctx.fillRect(xBlock * elemX, yBlock * elemY, xBlock, yBlock)
+        ctx.strokeRect(xBlock * elemX, yBlock * elemY, xBlock, yBlock)
+        ctx.fillStyle = '#fff'
+        ctx.fillText(x.type, xBlock * elemX + xBlock / 2 - width / 2, yBlock * elemY + yBlock / 2 + 12)
+      })
+
+      if (this.active !== null) {
+        const { x: activeX, y: activeY } = active.position
+
+        ctx.globalAlpha = 1
+        ctx.strokeStyle = '#d62527'
+        ctx.strokeRect(activeX * xBlock, activeY * yBlock, xBlock, yBlock)
+        ctx.strokeStyle = '#fff'
+      }
     })
-
-    if (this.active !== null) {
-      const { x: activeX, y: activeY } = active.position
-
-      ctx.globalAlpha = 1
-      ctx.strokeStyle = '#d62527'
-      ctx.strokeRect(activeX * xBlock, activeY * yBlock, xBlock, yBlock)
-      ctx.strokeStyle = '#fff'
-    }
   }
 
   swapItems (target, element) {
@@ -128,45 +163,28 @@ class Game {
 
     return isValid
   }
+
+  getMatching (idx) {
+    const { items } = this
+    const start = items[idx]
+    let [posX, posY] = Array(2).fill(0)
+
+    while (items[idx - 1 - posX].type === start.type) {
+      posX += 1
+    }
+
+    while (items[idx - 1 - posY].type === start.type) {
+      posY += 1
+    }
+  }
 }
 
 class GameItem {
   type = null
-  types = [
-    {
-      type: 1,
-      background: '#111'
-    },
-    {
-      type: 2,
-      background: '#222'
-    },
-    {
-      type: 3,
-      background: '#333'
-    },
-    {
-      type: 4,
-      background: '#444'
-    },
-    {
-      type: 5,
-      background: '#555'
-    },
-    {
-      type: 6,
-      background: '#666'
-    }
-  ]
 
-  constructor (x, y) {
-    Object.assign(this, this.types[Math.floor(Math.random() * this.types.length)])
-    this.coordinate = { x, y }
-  }
-
-  changeType () {
-    const valid = this.types.filter(x => x.type !== this.type)
-    Object.assign(this, valid[Math.floor(Math.random() * valid.length)])
+  constructor ({ type, background }) {
+    this.type = type
+    this.background = background
   }
 }
 

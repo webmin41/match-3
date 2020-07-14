@@ -11,5 +11,5 @@ module.exports = {
   },
   rules: {
   },
-  parser: 'babel-eslint',
+  parser: 'babel-eslint'
 }
